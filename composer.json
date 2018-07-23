@@ -3,7 +3,6 @@
 	"description": "Headless Browser Testing With Selenium For CakePHP3 Apps",
     "type": "library",
 	"license": "MIT",
-	"minimum-stability": "dev",
     "require": {
 		"phpunit/phpunit": "^5.7",
         "facebook/webdriver": "^1.6"

@@ -1,6 +1,6 @@
 <?php
+namespace KentaroA;
 
-namespace KentaroA\HeadlessBrowserTesting;
 use App\Controller\Users\ProjectsController;
 use Cake\TestSuite\IntegrationTestCase;
 use Cake\Datasource\ConnectionManager;
@@ -27,19 +27,16 @@ use Cake\I18n\FrozenTime;
  * $ curl https://intoli.com/install-google-chrome.sh | bash
  *
  * # Launch selenium standalone on localhost:specific port as daemon
- * $ java -jar path/to/selenium-server-standalone-3.13.0.jar -port 60002 > /dev/null 2>&1 &
- *
- * # Make sure processes
- * $ ps aux|grep -e Xv -e selenium -e chrome
+ * $ vendor/se/selenium-server-standalone/bin/selenium-server-standalone -port 60002 -log "/tmp/selenium.log" > /dev/null 2>&1 &
  *
  * # Make sure processes
  * $ ps aux|grep -e Xv -e selenium -e chrome
  *
  * # Kill virtual display, chrome and selenium
- * $ pkill -f Xv ; pkill -f chrome ; pkill -f selenium
+ * $ pkill -f chrome ; pkill -f selenium
  *
  * # Kill relations and start selenium standalone
- * $ pkill -f Xv ; pkill -f chrome ; pkill -f selenium ; java -jar path/to/selenium-server-standalone-3.13.0.jar -port 60002 > /dev/null 2>&1 &
+ * $ pkill -f chrome ; pkill -f selenium ; vendor/se/selenium-server-standalone/bin/selenium-server-standalone -port 60002 -log "/tmp/selenium.log" > /dev/null 2>&1 &
  *
  * # Testing
  * $ vendor/bin/phpunit tests/TestCase/HeadlessSampleTest.php --filter test001
@@ -55,8 +52,7 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	 *
 	 */
 	private $_selenium_host = "http://localhost:60002/wd/hub/";
-	private $_host = "http://example.com/";
-	private $_screen_shot_dir = "/path/to/screenshot/";
+	private $_screen_shot_dir = ROOT ."/path/to/dir/";
 	private $_ua = "user agent";
 	private $_window_size = ["width"=>1480, "height"=>2000];
 	private $_initialize_sql_file_path = ROOT."/path/to/init.sql";
@@ -76,9 +72,6 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	}
 	public function getDrivers() {
 		return $this->_drivers;
-	}
-	public function getHost() {
-		return $this->_host;
 	}
 	public function getUA() {
 		return $this->_ua;

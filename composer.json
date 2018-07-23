@@ -5,11 +5,13 @@
 	"license": "MIT",
     "require": {
 		"phpunit/phpunit": "^5.7",
-        "facebook/webdriver": "^1.6"
+        "facebook/webdriver": "^1.6",
+		"se/selenium-server-standalone": "^3.12"
     },
     "require-dev": {
 		"phpunit/phpunit": "^5.7",
-        "facebook/webdriver": "^1.6"
+        "facebook/webdriver": "^1.6",
+		"se/selenium-server-standalone": "^3.12"
     },
     "authors": [
         {

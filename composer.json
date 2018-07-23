@@ -4,7 +4,7 @@
     "type": "library",
 	"license": "MIT",
 	"minimum-stability": "dev",
-    "require-dev": {
+    "require": {
 		"phpunit/phpunit": "^5.7",
         "facebook/webdriver": "^1.6"
     },

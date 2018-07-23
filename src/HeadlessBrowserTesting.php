@@ -1,5 +1,6 @@
 <?php
 
+namespace KentaroA\HeadlessBrowserTesting;
 use App\Controller\Users\ProjectsController;
 use Cake\TestSuite\IntegrationTestCase;
 use Cake\Datasource\ConnectionManager;

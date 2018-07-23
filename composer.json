@@ -3,7 +3,7 @@
 	"description": "Headless Browser Testing With Selenium For CakePHP3 Apps",
     "type": "library",
 	"license": "MIT",
-	"minimum-stability": "stable",
+	"minimum-stability": "dev",
     "require-dev": {
 		"phpunit/phpunit": "^5.7",
         "facebook/webdriver": "^1.6"
@@ -17,5 +17,10 @@
             "name": "kentaro-a",
             "email": "minminzemi1121@yahoo.co.jp"
         }
-    ]
+    ],
+	"autoload": {
+        "psr-4": {
+            "KentaroA\\": "src/"
+        }
+    }
 }

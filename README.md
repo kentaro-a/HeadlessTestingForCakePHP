@@ -47,7 +47,7 @@ If you cannot kill the processes, you should try "kill -9 process" forcibly.
 $ pkill -f chrome ; pkill -f selenium
 ```
 
-- If you cannot create driver make sure whether your port is occupied or not by zonbie.
+- If you cannot create driver make sure whether your port is occupied or not by zombie.
 ```
 $ lsof -i:60002
 ```

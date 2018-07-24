@@ -18,7 +18,7 @@ use Cake\Core\Configure;
 use Cake\ORM\TableRegistry;
 use Cake\Core\Configure\Engine\PhpConfig;
 use Cake\I18n\FrozenTime;
-
+use KentaroA\HeadlessBrowserTestingException;
 
 /**
  * Wrapper for Headless Browser Test With Selenium
@@ -51,16 +51,72 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	 * Properties
 	 *
 	 */
-	private $_selenium_host = "http://localhost:60002/wd/hub/";
-	private $_screen_shot_dir = ROOT ."/path/to/dir/";
-	private $_ua = "user agent";
-	private $_window_size = ["width"=>1480, "height"=>2000];
-	private $_initialize_sql_file_path = ROOT."/path/to/init.sql";
-	private $_env_path = "environments/headless_testing";
-	private $_datasoruce_key = "test_master";
-	private $_chrome_binary_path = "/usr/bin/google-chrome";
+	private $_selenium_host;
+	private $_screen_shot_dir;
+	private $_ua;
+	private $_window_size;
+	private $_initialize_sql_file_path;
+	private $_env_path;
+	private $_datasoruce_key;
+	private $_chrome_binary_path;
 	private $_drivers;
 	private $_conn;
+
+	/*
+	 * SubClass Initializer
+	 * @return hash: [
+	 *		"selenium_host" => string,				// required: Like http://localhost:60002/wd/hub/
+	 *		"chrome_binary_path" => string,			// required: Path to google-chrome binary file
+	 *		"screen_shot_dir" => string,			// Path to dir where screen shot will be saved.
+	 *		"ua" => string,							// User Agent
+	 *		"window_size" => hash,					// Window size. default ["width"=>1480, "height"=>2000]
+	 *		"initialize_sql_file_path" => string,	// Path to .sql file which is executed before each test methods.
+	 *		"env_path" => string,					// Configure file in config/*, if you need to override app.php set this.
+	 *		"datasoruce_key" => string,				// Datasource key.
+	 * ];
+	 *
+	 */
+	abstract static function initialize();
+
+
+
+	/**
+	 * Setup before testing
+	 */
+	public function setUp() {
+		$config = static::initialize();
+		// Set Properties
+		$this->_selenium_host = $config["selenium_host"] ?? "";
+		$this->_chrome_binary_path = $config["chrome_binary_path"] ?? "";
+		$this->_screen_shot_dir = $config["screen_shot_dir"] ?? "";
+		$this->_ua = $config["ua"] ?? "";
+		$this->_window_size = $config["window_size"] ?? ["width"=>1480, "height"=>2000];
+		$this->_initialize_sql_file_path = $config["initialize_sql_file_path"] ?? "";
+		$this->_env_path = $config["env_path"] ?? "";
+		$this->_datasoruce_key = $config["datasoruce_key"] ?? "";
+
+		if (empty($this->_selenium_host)) {
+			throw New HeadlessBrowserTestingException("selenium_host isn't provided.");
+		}
+		if (empty($this->_chrome_binary_path) || !file_exists($this->_chrome_binary_path)) {
+			throw New HeadlessBrowserTestingException("chrome_binary_path isn't provided or isn't exist.");
+		}
+		if (!empty($this->_env_path)) {
+			Configure::load($this->_env_path, "default", false);
+		}
+		if (!empty($this->_datasoruce_key)) {
+			try {
+				$this->_conn = ConnectionManager::get($this->_datasoruce_key);
+				if (!empty($this->_initialize_sql_file_path) && file_exists($this->_initialize_sql_file_path)) {
+					$this->_conn->execute(file_get_contents($this->_initialize_sql_file_path));
+				}
+			} catch (\Exception $e) {
+				throw New HeadlessBrowserTestingException("Database Connection Exception.");
+			}
+		}
+		parent::setUp();
+	}
+
 
 
 	/**
@@ -75,37 +131,6 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	}
 	public function getUA() {
 		return $this->_ua;
-	}
-
-
-
-	/**
-	 * Setup before testing
-	 *
-	 */
-	public function setUp() {
-		// Load config/environments/selenium_test.php instead of app.php
-		if (!empty($this->_env_path)) {
-			Configure::load($this->_env_path, "default", false);
-		}
-		$this->initDB();
-		parent::setUp();
-	}
-
-
-
-	/**
-	 * Initialize test DB
-	 *
-	 */
-	private function initDB() {
-		// Override config with other key because the same key isn't accepted.
-		$this->_conn = ConnectionManager::get($this->_datasoruce_key);
-		// Execute sql in $_initialize_sql_file_path if it's provided.
-		if (file_exists($this->_initialize_sql_file_path)) {
-			$sql = file_get_contents($this->_initialize_sql_file_path);
-			$this->_conn->execute($sql);
-		}
 	}
 
 
@@ -143,7 +168,7 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	/*
 	 * Check if selector is Facebook\WebDriver\WebDriverBy or not.
 	 * @param any selector: Object // required,
-	 * @return: bool
+	 * @return bool
 	 *
 	 */
 	public function checkSelector($selector) {
@@ -210,7 +235,7 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	 */
 	public function resizeWindow($driver_key, $size=[]) {
 		if (!$this->checkDriverExist($driver_key)) {
-			throw New \Exception("Driver {$driver_key} doesn't exist.");
+			throw New HeadlessBrowserTestingException("Driver {$driver_key} doesn't exist.");
 		}
 		$size["width"] = $size["width"] ?? $this->_window_size["width"];
 		$size["height"] = $size["height"] ?? $this->_window_size["height"];
@@ -269,7 +294,7 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	 */
 	public function screenshot($driver_key, $test_name, $case_name, $file_name, $line) {
 		if (!$this->checkDriverExist($driver_key)) {
-			throw New \Exception("Driver {$driver_key} doesn't exist.");
+			throw New HeadlessBrowserTestingException("Driver {$driver_key} doesn't exist.");
 		}
 		$dir = "{$this->_screen_shot_dir}{$test_name}";
 		if (!file_exists($dir)) {
@@ -352,10 +377,10 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	 */
 	public function isElementExists($driver_key, $selector) {
 		if (!$this->checkDriverExist($driver_key)) {
-			throw New \Exception("Driver {$driver_key} doesn't exist.");
+			throw New HeadlessBrowserTestingException("Driver {$driver_key} doesn't exist.");
 		}
 		if (empty($selector)) {
-			throw New \Exception("selector is invalid. it need to be Facebook\WebDriver\WebDriverBy.");
+			throw New HeadlessBrowserTestingException("selector is invalid. it need to be Facebook\WebDriver\WebDriverBy.");
 		}
 		return (count($this->getDriver($driver_key)->findElements($selector)) > 0) ? true : false;
 	}
@@ -449,10 +474,10 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	 */
 	public function selectFile($driver_key, $selector, $file_path) {
 		if (!$this->checkDriverExist($driver_key)) {
-			throw New \Exception("Driver {$driver_key} doesn't exist.");
+			throw New HeadlessBrowserTestingException("Driver {$driver_key} doesn't exist.");
 		}
 		if (!$this->checkSelector($selector)) {
-			throw New \Exception("selector is invalid. it need to be Facebook\WebDriver\WebDriverBy.");
+			throw New HeadlessBrowserTestingException("selector is invalid. it need to be Facebook\WebDriver\WebDriverBy.");
 		}
 		$this->getDriver($driver_key)->findElement($selector)->setFileDetector(new LocalFileDetector());
 		$this->getDriver($driver_key)->findElement($selector)->sendKeys($file_path);
@@ -467,7 +492,7 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	 */
 	public function lostFocus($driver_key) {
 		if (!$this->checkDriverExist($driver_key)) {
-			throw New \Exception("Driver {$driver_key} doesn't exist.");
+			throw New HeadlessBrowserTestingException("Driver {$driver_key} doesn't exist.");
 		}
 		$this->getDriver($driver_key)->findElement(WebDriverBy::cssSelector('body'))->click();
 	}
@@ -483,13 +508,13 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	 */
 	public function selectPulldownItem($driver_key, $selector, $item) {
 		if (!$this->checkDriverExist($driver_key)) {
-			throw New \Exception("Driver {$driver_key} doesn't exist.");
+			throw New HeadlessBrowserTestingException("Driver {$driver_key} doesn't exist.");
 		}
 		if (!$this->checkSelector($selector)) {
-			throw New \Exception("selector is invalid. it need to be Facebook\WebDriver\WebDriverBy.");
+			throw New HeadlessBrowserTestingException("selector is invalid. it need to be Facebook\WebDriver\WebDriverBy.");
 		}
 		if (!isset($item["by"]) || !in_array($item["by"], ["value", "text", "index"])) {
-			throw New \Exception("parameter 'item' is invalid.");
+			throw New HeadlessBrowserTestingException("parameter 'item' is invalid.");
 		}
 		$pulldown = new WebDriverSelect($this->getDriver($driver_key)->findElement($selector));
 		switch ($item["by"]) {
@@ -515,7 +540,7 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	 */
 	public function threadSleep($seconds) {
 		if (!is_int($seconds)) {
-			throw New \Exception("Invalid parameter seconds.");
+			throw New HeadlessBrowserTestingException("Invalid parameter seconds.");
 		}
 		sleep($seconds);
 	}
@@ -538,7 +563,7 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	 */
 	public function waitUntilElementsAttribute($driver_key, $conditions) {
 		if (!$this->checkDriverExist($driver_key)) {
-			throw New \Exception("Driver {$driver_key} doesn't exist.");
+			throw New HeadlessBrowserTestingException("Driver {$driver_key} doesn't exist.");
 		}
 
 		$d = $this->getDriver($driver_key);
@@ -547,10 +572,10 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 			if (!$this->checkSelector($c["selector"])
 				|| empty($c["attribute"])
 				|| !in_array($c["compare"], ["==", "===", "!=", "!==", "<=", "<", ">=", ">", "exists"])) {
-				throw New \Exception("conditions is invalid.");
+				throw New HeadlessBrowserTestingException("conditions is invalid.");
 			}
 			if ($c["compare"] !== "exists" && !isset($c["expected"])) {
-				throw New \Exception("conditions is invalid.");
+				throw New HeadlessBrowserTestingException("conditions is invalid.");
 			}
 			$d->wait()->until(
 				function () use ($d, $c) {
@@ -585,7 +610,7 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 							$ev = !is_null($elem->getAttribute($c["attribute"]));
 							break;
 						default:
-							throw New \Exception("conditions['compare'] is invalid.");
+							throw New HeadlessBrowserTestingException("conditions['compare'] is invalid.");
 					}
 					return $ev;
 				},
@@ -604,7 +629,7 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	 */
 	public function waitUntil($driver_key, $web_driver_expected_condition) {
 		if (!$this->checkDriverExist($driver_key)) {
-			throw New \Exception("Driver {$driver_key} doesn't exist.");
+			throw New HeadlessBrowserTestingException("Driver {$driver_key} doesn't exist.");
 		}
 		// Wait with specified condition
 		$this->getDriver($driver_key)->wait()->until($web_driver_expected_condition);

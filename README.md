@@ -11,9 +11,13 @@ $ composer require kentaro-a/headless-testing-for-cakephp
  You have to get google-chrome.
 ```
 $ curl https://intoli.com/install-google-chrome.sh | bash
-```
+```  
 
-
+ Driver you want to use.  
+ ex) If you use ChromeDriver you should get its binary from here.   
+ https://sites.google.com/a/chromium.org/chromedriver/downloads
+  
+  
 
 ## Usage
 

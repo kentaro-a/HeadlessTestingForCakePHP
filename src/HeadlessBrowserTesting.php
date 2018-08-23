@@ -636,6 +636,46 @@ abstract class HeadlessBrowserTesting extends IntegrationTestCase {
 	}
 
 
+        /**
+	 * Scroll to top
+	 * @param string driver_key: Existed driver key. // required,
+	 *
+	 */
+	public function scrollToTop($driver_key) {
+		if (!$this->checkDriverExist($driver_key)) {
+			throw New HeadlessBrowserTestingException("Driver {$driver_key} doesn't exist.");
+		}
+		$this->getDriver($driver_key)->executeScript('window.scrollTo(0,0);');
+	}
+
+
+
+	/**
+	 * Scroll to bottom
+	 * @param string driver_key: Existed driver key. // required,
+	 *
+	 */
+	public function scrollToBottom($driver_key) {
+		if (!$this->checkDriverExist($driver_key)) {
+			throw New HeadlessBrowserTestingException("Driver {$driver_key} doesn't exist.");
+		}
+		$this->getDriver($driver_key)->executeScript('window.scrollTo(0,document.body.scrollHeight);');
+	}
+
+
+
+	/**
+	 * Scroll to specific element
+	 * @param string driver_key: Existed driver key. // required,
+	 * @param string css_selector: element selector // required,
+	 *
+	 */
+	public function scrollToSpecificElement($driver_key, $css_selector) {
+		if (!$this->checkDriverExist($driver_key)) {
+			throw New HeadlessBrowserTestingException("Driver {$driver_key} doesn't exist.");
+		}
+		$this->getDriver($driver_key)->executeScript("window.scrollTo(0,document.querySelector('{$css_selector}').getBoundingClientRect().top);");
+	}
 
 
 
